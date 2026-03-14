@@ -29,6 +29,7 @@ app.use('/api/reports', require('./routes/reports'));
 
 // Customer QR page
 app.get('/table/:tableNumber', (req, res) => {
+  console.log(`[QR] Customer page requested for table #${req.params.tableNumber} from ${req.ip}`);
   res.sendFile(path.join(__dirname, 'public', 'customer.html'));
 });
 

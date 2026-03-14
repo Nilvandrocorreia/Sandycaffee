@@ -79,53 +79,88 @@
   let currentTab = 'all';
   let orderPlaced = false;
 
+  // ── Global error safety net ──────────────────────────────────────────────────
+  window.addEventListener('unhandledrejection', function(e) {
+    console.error('[CUSTOMER] Unhandled promise rejection:', e.reason);
+    showBlocked('❌', 'Something went wrong', String(e.reason));
+  });
+  window.addEventListener('error', function(e) {
+    console.error('[CUSTOMER] Uncaught error:', e.message, 'at', e.filename, e.lineno);
+    showBlocked('❌', 'Something went wrong', e.message);
+  });
+
   // ── Init ────────────────────────────────────────────────────────────────────
   async function init() {
+    console.log('[CUSTOMER] init() started, pathname:', window.location.pathname);
+
     const parts = window.location.pathname.split('/');
     tableNumber = parts[parts.length - 1];
+    console.log('[CUSTOMER] tableNumber parsed:', tableNumber);
 
     // ENFORCE: must have a valid table number in URL
     if (!tableNumber || isNaN(tableNumber)) {
+      console.warn('[CUSTOMER] Invalid table number, showing blocked screen');
       showBlocked('⚠️', 'Please scan the QR code from your table', 'Orders can only be placed by scanning the QR code on your table.');
       return;
     }
 
     try {
+      console.log('[CUSTOMER] Fetching table info for number:', tableNumber);
       const res = await fetch(`/api/tables/public/${tableNumber}`);
-      if (!res.ok) { showBlocked('❌', 'Table not found', 'Please scan the QR code on your table again.'); return; }
+      console.log('[CUSTOMER] Table API response status:', res.status);
+      if (!res.ok) {
+        console.warn('[CUSTOMER] Table not found (status ' + res.status + ')');
+        showBlocked('❌', 'Table not found', 'Please scan the QR code on your table again.');
+        return;
+      }
       const table = await res.json();
+      console.log('[CUSTOMER] Table data:', JSON.stringify(table));
       tableId = table.id;
       tableName = table.name;
 
       // ENFORCE: table occupancy check
       if (table.status === 'occupied') {
+        console.log('[CUSTOMER] Table is occupied');
         showBlocked('🔴', 'This table is currently occupied', 'Please ask a staff member for assistance.');
         return;
       }
       if (table.status === 'bill-requested') {
+        console.log('[CUSTOMER] Table has bill requested');
         showBlocked('🧾', 'Bill has been requested', 'A staff member will be with you shortly.');
         return;
       }
 
       // Table is available — show the menu
+      console.log('[CUSTOMER] Table available, showing menu shell');
       document.getElementById('tableLabel').textContent = tableName;
       document.title = `Sandycaffee — ${tableName}`;
       document.getElementById('appShell').style.display = 'block';
 
       // Load menu data
+      console.log('[CUSTOMER] Loading menu data (categories, products, meals)...');
       const [catRes, prodRes, mealRes] = await Promise.all([
         fetch('/api/categories'),
         fetch('/api/products'),
         fetch('/api/meals')
       ]);
+      console.log('[CUSTOMER] Menu API statuses — categories:', catRes.status, 'products:', prodRes.status, 'meals:', mealRes.status);
+
+      if (!catRes.ok || !prodRes.ok || !mealRes.ok) {
+        throw new Error(`Menu API error — categories:${catRes.status} products:${prodRes.status} meals:${mealRes.status}`);
+      }
+
       allCategories = await catRes.json();
       allProducts   = await prodRes.json();
       const mealsRaw = await mealRes.json();
-      allMeals = mealsRaw.filter(m => m.active);
+      allMeals = Array.isArray(mealsRaw) ? mealsRaw.filter(m => m.active) : [];
+
+      console.log('[CUSTOMER] Menu loaded — categories:', allCategories.length, 'products:', allProducts.length, 'meals:', allMeals.length);
 
       renderTabs();
       renderMenu();
+      console.log('[CUSTOMER] Menu rendered successfully');
     } catch (err) {
+      console.error('[CUSTOMER] init() error:', err);
       showBlocked('❌', 'Something went wrong', err.message);
     }
   }
