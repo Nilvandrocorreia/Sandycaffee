@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const os = require('os');
-const db = require('../database/db');
+const { getDb } = require('../database/db');
 const { requireAdmin } = require('../middleware/auth');
 
 function detectLocalIP() {
@@ -17,8 +17,9 @@ function detectLocalIP() {
 }
 
 // GET /api/settings/base-url  (no auth — needed by tables page on load)
-router.get('/base-url', (req, res) => {
-  const setting = db.prepare("SELECT value FROM settings WHERE key = 'base_url'").get();
+router.get('/base-url', async (req, res) => {
+  const db = getDb();
+  const setting = await db.get("SELECT value FROM settings WHERE key = 'base_url'");
   const detectedIp = detectLocalIP();
   const port = process.env.PORT || 3000;
   const detectedUrl = `http://${detectedIp}:${port}`;
@@ -30,11 +31,12 @@ router.get('/base-url', (req, res) => {
 });
 
 // PUT /api/settings/base-url
-router.put('/base-url', requireAdmin, (req, res) => {
+router.put('/base-url', requireAdmin, async (req, res) => {
   let { base_url } = req.body;
   if (!base_url) return res.status(400).json({ error: 'base_url is required' });
   base_url = base_url.trim().replace(/\/$/, '');
-  db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('base_url', ?)").run(base_url);
+  const db = getDb();
+  await db.run("INSERT OR REPLACE INTO settings (key, value) VALUES ('base_url', ?)", [base_url]);
   console.log(`[SETTINGS] BASE_URL updated to: ${base_url}`);
   res.json({ base_url });
 });

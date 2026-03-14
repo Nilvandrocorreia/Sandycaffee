@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../database/db');
+const { getDb } = require('../database/db');
 const { authenticate } = require('../middleware/auth');
 const PDFDocument = require('pdfkit');
 
@@ -14,36 +14,37 @@ function getDateRange(period) {
     start = new Date(now);
     start.setMonth(now.getMonth() - 1);
   } else {
-    // day
     start = new Date(now.toISOString().split('T')[0]);
   }
   return start.toISOString().split('T')[0];
 }
 
 // GET /api/reports/sales?period=day|week|month
-router.get('/sales', authenticate, (req, res) => {
+router.get('/sales', authenticate, async (req, res) => {
+  const db = getDb();
   const period = req.query.period || 'day';
   const startDate = getDateRange(period);
-  const summary = db.prepare(`
+  const summary = await db.get(`
     SELECT COUNT(*) as order_count, COALESCE(SUM(total),0) as total_revenue,
            COALESCE(AVG(total),0) as avg_order_value
     FROM sales WHERE date(created_at) >= ?
-  `).get(startDate);
+  `, [startDate]);
 
-  const daily = db.prepare(`
+  const daily = await db.all(`
     SELECT date(created_at) as day, COUNT(*) as orders, SUM(total) as revenue
     FROM sales WHERE date(created_at) >= ?
     GROUP BY day ORDER BY day
-  `).all(startDate);
+  `, [startDate]);
 
   res.json({ ...summary, daily, period, start_date: startDate });
 });
 
 // GET /api/reports/best-selling
-router.get('/best-selling', authenticate, (req, res) => {
+router.get('/best-selling', authenticate, async (req, res) => {
+  const db = getDb();
   const period = req.query.period || 'day';
   const startDate = getDateRange(period);
-  const products = db.prepare(`
+  const products = await db.all(`
     SELECT oi.name, oi.product_id, SUM(oi.quantity) as total_qty,
            SUM(oi.quantity * oi.unit_price) as total_revenue
     FROM order_items oi
@@ -53,21 +54,21 @@ router.get('/best-selling', authenticate, (req, res) => {
     GROUP BY oi.product_id, oi.name
     ORDER BY total_qty DESC
     LIMIT 10
-  `).all(startDate);
+  `, [startDate]);
   res.json(products);
 });
 
 // GET /api/reports/hourly
-router.get('/hourly', authenticate, (req, res) => {
+router.get('/hourly', authenticate, async (req, res) => {
+  const db = getDb();
   const today = new Date().toISOString().split('T')[0];
-  const hourly = db.prepare(`
+  const hourly = await db.all(`
     SELECT strftime('%H', created_at) as hour,
            COUNT(*) as orders, SUM(total) as revenue
     FROM sales WHERE date(created_at) = ?
     GROUP BY hour ORDER BY hour
-  `).all(today);
+  `, [today]);
 
-  // Fill in all 24 hours
   const full = [];
   for (let h = 0; h < 24; h++) {
     const hourStr = String(h).padStart(2, '0');
@@ -78,17 +79,18 @@ router.get('/hourly', authenticate, (req, res) => {
 });
 
 // GET /api/reports/pdf
-router.get('/pdf', authenticate, (req, res) => {
+router.get('/pdf', authenticate, async (req, res) => {
+  const db = getDb();
   const period = req.query.period || 'day';
   const startDate = getDateRange(period);
 
-  const summary = db.prepare(`
+  const summary = await db.get(`
     SELECT COUNT(*) as order_count, COALESCE(SUM(total),0) as total_revenue,
            COALESCE(AVG(total),0) as avg_order_value
     FROM sales WHERE date(created_at) >= ?
-  `).get(startDate);
+  `, [startDate]);
 
-  const bestSelling = db.prepare(`
+  const bestSelling = await db.all(`
     SELECT oi.name, SUM(oi.quantity) as total_qty,
            SUM(oi.quantity * oi.unit_price) as total_revenue
     FROM order_items oi
@@ -96,33 +98,31 @@ router.get('/pdf', authenticate, (req, res) => {
     JOIN sales s ON s.order_id = o.id
     WHERE date(s.created_at) >= ? AND oi.product_id IS NOT NULL
     GROUP BY oi.name ORDER BY total_qty DESC LIMIT 10
-  `).all(startDate);
+  `, [startDate]);
 
-  const daily = db.prepare(`
+  const daily = await db.all(`
     SELECT date(created_at) as day, COUNT(*) as orders, SUM(total) as revenue
     FROM sales WHERE date(created_at) >= ?
     GROUP BY day ORDER BY day
-  `).all(startDate);
+  `, [startDate]);
 
-  const byMethod = db.prepare(`
+  const byMethod = await db.all(`
     SELECT payment_method, COUNT(*) as count, SUM(total) as total
     FROM sales WHERE date(created_at) >= ?
     GROUP BY payment_method
-  `).all(startDate);
+  `, [startDate]);
 
   const doc = new PDFDocument({ margin: 50 });
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="sales-report-${period}.pdf"`);
   doc.pipe(res);
 
-  // Header
   doc.fontSize(24).fillColor('#D2691E').text('☕ Sandycaffee', { align: 'center' });
   doc.fontSize(16).fillColor('#333').text('Sales Report', { align: 'center' });
   const periodLabel = period === 'day' ? 'Today' : period === 'week' ? 'Last 7 Days' : 'Last 30 Days';
   doc.fontSize(11).fillColor('#666').text(`Period: ${periodLabel}  |  Generated: ${new Date().toLocaleString('en-GB')}`, { align: 'center' });
   doc.moveDown(1.5);
 
-  // Summary
   doc.fontSize(14).fillColor('#8B4513').text('Summary', { underline: true });
   doc.moveDown(0.5);
   doc.fontSize(12).fillColor('#333');
@@ -131,7 +131,6 @@ router.get('/pdf', authenticate, (req, res) => {
   doc.text(`Avg Order Value: £${(summary.avg_order_value || 0).toFixed(2)}`);
   doc.moveDown(1);
 
-  // Payment breakdown
   if (byMethod.length > 0) {
     doc.fontSize(14).fillColor('#8B4513').text('Payment Methods', { underline: true });
     doc.moveDown(0.5);
@@ -141,7 +140,6 @@ router.get('/pdf', authenticate, (req, res) => {
     doc.moveDown(1);
   }
 
-  // Best selling
   if (bestSelling.length > 0) {
     doc.fontSize(14).fillColor('#8B4513').text('Best Selling Products', { underline: true });
     doc.moveDown(0.5);
@@ -163,7 +161,6 @@ router.get('/pdf', authenticate, (req, res) => {
     doc.moveDown(1);
   }
 
-  // Daily breakdown
   if (daily.length > 0) {
     doc.addPage();
     doc.fontSize(14).fillColor('#8B4513').text('Daily Breakdown', { underline: true });

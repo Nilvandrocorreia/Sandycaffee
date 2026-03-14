@@ -48,20 +48,22 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// Run seed on startup
+const { initDb } = require('./database/db');
 const seed = require('./database/seed');
 const { detectLocalIP } = require('./routes/settings');
 
-seed().then(() => {
+async function start() {
+  await initDb();
+  await seed();
   app.listen(PORT, '0.0.0.0', () => {
     const localIP = detectLocalIP();
     console.log(`☕ Sandycaffee POS running on http://localhost:${PORT}`);
     console.log(`📱 Mobile / LAN access:   http://${localIP}:${PORT}`);
     console.log(`🔗 Customer QR base URL:  http://${localIP}:${PORT}  (set in Tables & QR page)`);
   });
-}).catch(err => {
-  console.error('Seed error:', err);
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`☕ Sandycaffee POS running on http://localhost:${PORT}`);
-  });
+}
+
+start().catch(err => {
+  console.error('Startup error:', err);
+  process.exit(1);
 });

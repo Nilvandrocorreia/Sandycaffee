@@ -1,76 +1,79 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../database/db');
+const { getDb } = require('../database/db');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const PDFDocument = require('pdfkit');
 
 // GET /api/inventory
-router.get('/', authenticate, (req, res) => {
-  const products = db.prepare(`
+router.get('/', authenticate, async (req, res) => {
+  const db = getDb();
+  const products = await db.all(`
     SELECT p.*, c.name as category_name, c.emoji as category_emoji
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
     WHERE p.active = 1
     ORDER BY c.name, p.name
-  `).all();
+  `);
   res.json(products);
 });
 
 // PUT /api/inventory/:productId/restock
-router.put('/:productId/restock', authenticate, (req, res) => {
+router.put('/:productId/restock', authenticate, async (req, res) => {
   const { quantity, note } = req.body;
   if (!quantity || parseInt(quantity) <= 0) {
     return res.status(400).json({ error: 'Valid quantity required' });
   }
-  const product = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.productId);
+  const db = getDb();
+  const product = await db.get('SELECT * FROM products WHERE id = ?', [req.params.productId]);
   if (!product) return res.status(404).json({ error: 'Product not found' });
 
-  db.prepare('UPDATE products SET stock = stock + ? WHERE id = ?').run(parseInt(quantity), product.id);
-  db.prepare('INSERT INTO stock_movements (product_id, quantity, type, note) VALUES (?, ?, ?, ?)')
-    .run(product.id, parseInt(quantity), 'restock', note || 'Manual restock');
+  await db.run('UPDATE products SET stock = stock + ? WHERE id = ?', [parseInt(quantity), product.id]);
+  await db.run(
+    'INSERT INTO stock_movements (product_id, quantity, type, note) VALUES (?, ?, ?, ?)',
+    [product.id, parseInt(quantity), 'restock', note || 'Manual restock']
+  );
 
-  const updated = db.prepare('SELECT * FROM products WHERE id = ?').get(product.id);
+  const updated = await db.get('SELECT * FROM products WHERE id = ?', [product.id]);
   res.json(updated);
 });
 
 // GET /api/inventory/movements
-router.get('/movements', authenticate, (req, res) => {
-  const movements = db.prepare(`
+router.get('/movements', authenticate, async (req, res) => {
+  const db = getDb();
+  const movements = await db.all(`
     SELECT sm.*, p.name as product_name
     FROM stock_movements sm
     JOIN products p ON sm.product_id = p.id
     ORDER BY sm.created_at DESC
     LIMIT 200
-  `).all();
+  `);
   res.json(movements);
 });
 
 // GET /api/inventory/report/pdf
-router.get('/report/pdf', authenticate, (req, res) => {
-  const products = db.prepare(`
+router.get('/report/pdf', authenticate, async (req, res) => {
+  const db = getDb();
+  const products = await db.all(`
     SELECT p.*, c.name as category_name
     FROM products p LEFT JOIN categories c ON p.category_id = c.id
     WHERE p.active = 1 ORDER BY c.name, p.name
-  `).all();
+  `);
 
   const doc = new PDFDocument({ margin: 50 });
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', 'attachment; filename="inventory-report.pdf"');
   doc.pipe(res);
 
-  // Header
   doc.fontSize(22).fillColor('#D2691E').text('Sandycaffee', { align: 'center' });
   doc.fontSize(16).fillColor('#333').text('Inventory Report', { align: 'center' });
   doc.fontSize(10).fillColor('#666').text(`Generated: ${new Date().toLocaleString('en-GB')}`, { align: 'center' });
   doc.moveDown(1.5);
 
-  // Summary
   const lowStock = products.filter(p => p.stock <= p.min_stock);
   doc.fontSize(12).fillColor('#333');
   doc.text(`Total Products: ${products.length}   Low Stock Items: ${lowStock.length}`);
   doc.moveDown(1);
 
-  // Table header
   const tableTop = doc.y;
   const col = [50, 200, 290, 370, 430, 490];
   doc.fontSize(10).fillColor('#fff').rect(50, tableTop, 500, 18).fill('#8B4513');
