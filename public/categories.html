@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Categories — Sandycaffee</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main-content">
+    <header class="topbar">
+      <span class="topbar-title">Categories</span>
+      <div class="topbar-right">
+        <div class="user-badge"><div class="user-avatar" id="topbarAvatar">A</div><span id="topbarUserName">Admin</span></div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <h1>📂 Categories</h1>
+        <button class="btn btn-primary" onclick="openModal()">+ Add Category</button>
+      </div>
+      <div id="categoryGrid" class="category-grid">
+        <div class="spinner"></div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">Add Category</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="modalAlert" class="alert" style="display:none"></div>
+        <div class="form-group"><label>Category Name *</label><input class="form-control" id="fName" placeholder="e.g. Hot Drinks" required></div>
+        <div class="two-col">
+          <div class="form-group"><label>Emoji</label><input class="form-control" id="fEmoji" placeholder="☕" maxlength="4"></div>
+          <div class="form-group"><label>Colour</label><input type="color" class="form-control" id="fColour" value="#FF8C00" style="height:42px;padding:4px;cursor:pointer;"></div>
+        </div>
+        <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+          <input type="checkbox" id="fKitchen" style="width:18px;height:18px;cursor:pointer;">
+          <label for="fKitchen" style="margin:0;cursor:pointer;">🍳 Sends to Kitchen</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveCategory()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/categories.js"></script>
+</body>
+</html>

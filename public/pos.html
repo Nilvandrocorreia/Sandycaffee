@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POS — Sandycaffee</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin.css">
+  <style>
+    .pos-layout { display: flex; gap: 0; height: calc(100vh - 60px); overflow: hidden; }
+    .pos-left { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 16px; gap: 12px; }
+    .pos-right { width: 360px; min-width: 320px; background: #16213e; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+    .pos-products { flex: 1; overflow-y: auto; }
+    .pos-product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+    .pos-product-btn {
+      background: var(--card-bg); border: 2px solid var(--border); border-radius: 10px;
+      padding: 12px 8px; cursor: pointer; text-align: center; transition: all 0.15s;
+      color: var(--text); font-family: 'Poppins', sans-serif;
+    }
+    .pos-product-btn:hover { border-color: var(--primary); transform: translateY(-1px); }
+    .pos-product-btn:active { transform: scale(0.96); }
+    .pos-product-btn img { width: 52px; height: 52px; object-fit: cover; border-radius: 50%; margin-bottom: 7px; }
+    .pos-product-btn .placeholder-img { width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.07); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 7px; }
+    .pos-product-btn .pname { font-size: 0.82rem; font-weight: 500; line-height: 1.3; margin-bottom: 4px; }
+    .pos-product-btn .pprice { font-size: 0.9rem; font-weight: 700; color: var(--accent); }
+    .pos-product-btn .pstock { font-size: 0.7rem; color: rgba(255,255,255,0.35); }
+
+    /* Cart */
+    .cart-header-pos { padding: 16px; border-bottom: 1px solid var(--border); }
+    .cart-header-pos h3 { font-size: 1rem; font-weight: 600; }
+    .cart-items-pos { flex: 1; overflow-y: auto; padding: 10px 12px; }
+    .cart-empty { text-align: center; padding: 32px 16px; color: rgba(255,255,255,0.3); font-size: 0.9rem; }
+    .cart-item-pos { display: flex; align-items: center; gap: 8px; padding: 9px 4px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .cart-item-pos .ci-name { flex: 1; font-size: 0.83rem; font-weight: 500; line-height: 1.3; }
+    .cart-item-pos .ci-price { font-size: 0.83rem; color: var(--accent); min-width: 56px; text-align: right; }
+    .ci-qty { display: flex; align-items: center; gap: 6px; }
+    .ci-qty button { width: 24px; height: 24px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: var(--text); font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .ci-qty button:hover { border-color: var(--accent); color: var(--accent); }
+    .ci-qty span { font-size: 0.85rem; font-weight: 600; min-width: 18px; text-align: center; }
+
+    .cart-footer-pos { padding: 14px; border-top: 1px solid var(--border); }
+    .cart-total-row { display: flex; justify-content: space-between; font-size: 1.05rem; font-weight: 700; margin-bottom: 12px; }
+    .cart-total-row span:last-child { color: var(--accent); font-size: 1.2rem; }
+    .cart-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .cart-options select { width: 100%; }
+    .payment-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+    .pay-tab { flex: 1; padding: 8px 4px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: rgba(255,255,255,0.5); font-family: 'Poppins', sans-serif; font-size: 0.8rem; cursor: pointer; text-align: center; transition: all 0.2s; }
+    .pay-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .cart-actions { display: flex; gap: 8px; }
+    .cart-actions .btn { flex: 1; justify-content: center; }
+
+    /* Pending customer orders */
+    .pending-tab { position: relative; }
+    .pending-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #e53e3e; color: #fff;
+      border-radius: 50%; width: 18px; height: 18px;
+      font-size: 0.68rem; font-weight: 700;
+      margin-left: 4px;
+    }
+    .pending-order-card {
+      background: var(--card-bg);
+      border: 2px solid #d69e2e;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .pending-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 6px; font-size: 0.9rem;
+    }
+
+    /* Receipt Modal */
+    .receipt { font-family: 'Courier New', monospace; background: #fff; color: #000; padding: 20px; border-radius: 8px; max-width: 320px; margin: 0 auto; }
+    .receipt-logo { text-align: center; font-size: 1.1rem; font-weight: bold; margin-bottom: 6px; }
+    .receipt-divider { border-top: 1px dashed #999; margin: 8px 0; }
+    .receipt-row { display: flex; justify-content: space-between; font-size: 0.85rem; margin: 4px 0; }
+    .receipt-total { font-size: 1rem; font-weight: bold; }
+    .receipt-footer { text-align: center; font-size: 0.78rem; color: #666; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main-content">
+    <header class="topbar">
+      <span class="topbar-title">💰 POS / Till</span>
+      <div class="topbar-right">
+        <div class="user-badge"><div class="user-avatar" id="topbarAvatar">A</div><span id="topbarUserName">Admin</span></div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </header>
+
+    <div class="pos-layout">
+      <!-- Left: Products -->
+      <div class="pos-left">
+        <div class="filter-tabs" id="categoryTabs">
+          <button class="filter-tab active" data-id="">All</button>
+        </div>
+        <div class="pos-products">
+          <div class="pos-product-grid" id="productGrid">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Cart -->
+      <div class="pos-right">
+        <div class="cart-header-pos">
+          <h3>🛒 Current Order</h3>
+        </div>
+        <div class="cart-items-pos" id="cartItems">
+          <div class="cart-empty">Add items to start an order</div>
+        </div>
+        <div class="cart-footer-pos">
+          <div class="cart-total-row"><span>Total</span><span id="cartTotal">£0.00</span></div>
+          <div class="cart-options">
+            <select class="form-control" id="tableSelect"><option value="">— Take Away / Till —</option></select>
+          </div>
+          <div class="payment-tabs">
+            <button class="pay-tab active" data-method="cash">💵 Cash</button>
+            <button class="pay-tab" data-method="card">💳 Card</button>
+            <button class="pay-tab" data-method="qr">📱 QR Pay</button>
+          </div>
+          <div class="cart-actions">
+            <button class="btn btn-secondary" onclick="clearCart()">🗑️ Clear</button>
+            <button class="btn btn-primary" onclick="placeOrder()">✅ Place Order</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Receipt Modal -->
+  <div class="modal-overlay" id="receiptModal">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-header">
+        <h3>Receipt</h3>
+        <button class="modal-close" onclick="closeReceipt()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="receipt" id="receiptContent"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeReceipt()">Close</button>
+        <button class="btn btn-primary" onclick="printReceipt()">🖨️ Print</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/pos.js"></script>
+</body>
+</html>

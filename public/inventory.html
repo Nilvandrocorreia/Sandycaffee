@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory — Sandycaffee</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin.css">
+  <style>
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .tab-btn {
+      padding: 10px 22px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: rgba(255,255,255,0.5);
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .stock-bar-wrap { width: 80px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; display: inline-block; vertical-align: middle; }
+    .stock-bar { height: 100%; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main-content">
+    <header class="topbar">
+      <span class="topbar-title">📦 Inventory</span>
+      <div class="topbar-right">
+        <a href="/api/inventory/report/pdf" target="_blank" class="btn btn-secondary btn-sm">📄 Export PDF</a>
+        <div class="user-badge"><div class="user-avatar" id="topbarAvatar">A</div><span id="topbarUserName">Admin</span></div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <h1>📦 Inventory Management</h1>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab(this, 'tabStock')">Stock Levels</button>
+        <button class="tab-btn" onclick="switchTab(this, 'tabMovements')">Stock Movements</button>
+      </div>
+
+      <!-- Stock Levels Tab -->
+      <div id="tabStock" class="tab-content active">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+            <div style="display:flex;gap:8px;">
+              <input type="text" class="form-control" id="searchInput" placeholder="Search products…" oninput="filterTable()" style="width:220px;">
+            </div>
+            <div style="display:flex;gap:8px;">
+              <span class="badge badge-danger" id="lowStockBadge" style="display:none"></span>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Category</th>
+                  <th>Price</th>
+                  <th>Stock</th>
+                  <th>Min Stock</th>
+                  <th>Status</th>
+                  <th>Restock</th>
+                </tr>
+              </thead>
+              <tbody id="inventoryTableBody">
+                <tr><td colspan="7" style="text-align:center;padding:30px;"><div class="spinner"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Movements Tab -->
+      <div id="tabMovements" class="tab-content">
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Date/Time</th><th>Product</th><th>Type</th><th>Quantity</th><th>Note</th></tr>
+              </thead>
+              <tbody id="movementsTableBody">
+                <tr><td colspan="5" style="text-align:center;padding:30px;"><div class="spinner"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Restock Modal -->
+  <div class="modal-overlay" id="restockModal">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-header">
+        <h3 id="restockTitle">Restock Product</h3>
+        <button class="modal-close" onclick="closeRestockModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="restockAlert" class="alert" style="display:none"></div>
+        <div class="form-group">
+          <label>Current Stock</label>
+          <div id="restockCurrentStock" style="font-size:1.1rem;font-weight:600;color:var(--accent);padding:6px 0;"></div>
+        </div>
+        <div class="form-group">
+          <label>Quantity to Add *</label>
+          <input type="number" class="form-control" id="restockQty" min="1" placeholder="e.g. 20">
+        </div>
+        <div class="form-group">
+          <label>Note</label>
+          <input type="text" class="form-control" id="restockNote" placeholder="e.g. Weekly delivery">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeRestockModal()">Cancel</button>
+        <button class="btn btn-success" onclick="submitRestock()">✅ Add Stock</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/inventory.js"></script>
+</body>
+</html>

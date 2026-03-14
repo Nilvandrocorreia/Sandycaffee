@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Products — Sandycaffee</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main-content">
+    <header class="topbar">
+      <span class="topbar-title">Products</span>
+      <div class="topbar-right">
+        <div class="user-badge"><div class="user-avatar" id="topbarAvatar">A</div><span id="topbarUserName">Admin</span></div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <h1>🛍️ Products</h1>
+        <button class="btn btn-primary" onclick="openModal()">+ Add Product</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Photo</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="productTableBody"><tr><td colspan="7"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" style="max-width:560px">
+      <div class="modal-header">
+        <h3 id="modalTitle">Add Product</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="modalAlert" class="alert" style="display:none"></div>
+        <div class="two-col">
+          <div class="form-group"><label>Product Name *</label><input class="form-control" id="fName" required></div>
+          <div class="form-group"><label>Price (£) *</label><input type="number" class="form-control" id="fPrice" step="0.01" min="0" required></div>
+        </div>
+        <div class="form-group"><label>Category</label>
+          <select class="form-control" id="fCategory"><option value="">— None —</option></select>
+        </div>
+        <div class="two-col">
+          <div class="form-group"><label>Stock</label><input type="number" class="form-control" id="fStock" value="0" min="0"></div>
+          <div class="form-group"><label>Min Stock</label><input type="number" class="form-control" id="fMinStock" value="5" min="0"></div>
+        </div>
+        <div class="form-group"><label>Product Image</label>
+          <input type="file" class="form-control" id="fPhoto" accept="image/*">
+          <div id="photoPreview" style="margin-top:8px;"></div>
+        </div>
+        <div class="form-group" id="activeGroup" style="display:none">
+          <div class="form-check"><input type="checkbox" id="fActive" checked><label for="fActive">Active</label></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveProduct()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/products.js"></script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meals — Sandycaffee</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main-content">
+    <header class="topbar">
+      <span class="topbar-title">Combo Meals</span>
+      <div class="topbar-right">
+        <div class="user-badge"><div class="user-avatar" id="topbarAvatar">A</div><span id="topbarUserName">Admin</span></div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <h1>🍽️ Meals</h1>
+        <button class="btn btn-primary" onclick="openModal()">+ Add Meal</button>
+      </div>
+      <div id="mealsList" class="card">
+        <div class="spinner"></div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" style="max-width:580px">
+      <div class="modal-header">
+        <h3 id="modalTitle">Add Meal</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="modalAlert" class="alert" style="display:none"></div>
+        <div class="two-col">
+          <div class="form-group"><label>Meal Name *</label><input class="form-control" id="fName" required></div>
+          <div class="form-group"><label>Price (£) *</label><input type="number" class="form-control" id="fPrice" step="0.01" min="0" required></div>
+        </div>
+        <div class="form-group"><label>Description</label><textarea class="form-control" id="fDescription" rows="2" placeholder="Optional description"></textarea></div>
+        <div class="form-group">
+          <label>Products in this meal</label>
+          <div id="mealItemsList" style="margin-bottom:8px;"></div>
+          <button type="button" class="btn btn-sm btn-secondary" onclick="addMealItem()">+ Add Item</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveMeal()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/meals.js"></script>
+</body>
+</html>

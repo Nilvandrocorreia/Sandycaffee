@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sandycaffee — Order</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/customer.css">
+</head>
+<body>
+
+  <!-- ── BLOCKED SCREEN (shown when no table or occupied) ── -->
+  <div id="blockedScreen" class="blocked-screen" style="display:none">
+    <div class="blocked-content">
+      <div class="blocked-icon" id="blockedIcon">⚠️</div>
+      <h2 id="blockedTitle">Please scan the QR code from your table</h2>
+      <p id="blockedMsg">Orders can only be placed by scanning the QR code on your table.</p>
+    </div>
+  </div>
+
+  <!-- ── MAIN APP (hidden until table verified) ── -->
+  <div id="appShell" style="display:none">
+
+    <!-- Header -->
+    <header class="customer-header">
+      <div class="header-brand">☕ Sandycaffee</div>
+      <div class="header-table" id="tableLabel">Loading…</div>
+    </header>
+
+    <!-- Category Tabs -->
+    <div class="category-tabs" id="categoryTabs"></div>
+
+    <!-- Menu -->
+    <div class="menu-container" id="menuContainer">
+      <div class="loading"><div class="spinner"></div><p>Loading menu…</p></div>
+    </div>
+
+    <!-- Floating cart button -->
+    <button class="cart-fab hidden" id="cartFab" onclick="openCart()">
+      <span class="cart-fab-label">🛒 View Order</span>
+      <span class="cart-fab-count" id="cartCount">0</span>
+      <span class="cart-fab-total" id="cartFabTotal">£0.00</span>
+    </button>
+
+  </div>
+
+  <!-- ── CART DRAWER ── -->
+  <div class="cart-overlay" id="cartOverlay" onclick="closeCartOutside(event)">
+    <div class="cart-drawer" id="cartDrawer">
+      <div class="cart-handle"></div>
+      <div class="cart-header-row">
+        <h3>🛒 Your Order</h3>
+        <button class="cart-close-btn" onclick="closeCart()">✕</button>
+      </div>
+      <div class="cart-body" id="cartBody"></div>
+      <div class="cart-foot" id="cartFoot">
+        <div class="cart-total-row">
+          <span>Total</span>
+          <span class="cart-total-amt" id="cartTotal">£0.00</span>
+        </div>
+        <button class="btn-place-order" id="placeOrderBtn" onclick="placeOrder()">Place Order</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="customer-toast" id="toast"></div>
+
+  <script>
+  // ── State ───────────────────────────────────────────────────────────────────
+  let tableId = null;
+  let tableNumber = null;
+  let tableName = null;
+  let cart = [];
+  let allProducts = [];
+  let allMeals = [];
+  let allCategories = [];
+  let currentTab = 'all';
+  let orderPlaced = false;
+
+  // ── Init ────────────────────────────────────────────────────────────────────
+  async function init() {
+    const parts = window.location.pathname.split('/');
+    tableNumber = parts[parts.length - 1];
+
+    // ENFORCE: must have a valid table number in URL
+    if (!tableNumber || isNaN(tableNumber)) {
+      showBlocked('⚠️', 'Please scan the QR code from your table', 'Orders can only be placed by scanning the QR code on your table.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/tables/public/${tableNumber}`);
+      if (!res.ok) { showBlocked('❌', 'Table not found', 'Please scan the QR code on your table again.'); return; }
+      const table = await res.json();
+      tableId = table.id;
+      tableName = table.name;
+
+      // ENFORCE: table occupancy check
+      if (table.status === 'occupied') {
+        showBlocked('🔴', 'This table is currently occupied', 'Please ask a staff member for assistance.');
+        return;
+      }
+      if (table.status === 'bill-requested') {
+        showBlocked('🧾', 'Bill has been requested', 'A staff member will be with you shortly.');
+        return;
+      }
+
+      // Table is available — show the menu
+      document.getElementById('tableLabel').textContent = tableName;
+      document.title = `Sandycaffee — ${tableName}`;
+      document.getElementById('appShell').style.display = 'block';
+
+      // Load menu data
+      const [catRes, prodRes, mealRes] = await Promise.all([
+        fetch('/api/categories'),
+        fetch('/api/products'),
+        fetch('/api/meals')
+      ]);
+      allCategories = await catRes.json();
+      allProducts   = await prodRes.json();
+      const mealsRaw = await mealRes.json();
+      allMeals = mealsRaw.filter(m => m.active);
+
+      renderTabs();
+      renderMenu();
+    } catch (err) {
+      showBlocked('❌', 'Something went wrong', err.message);
+    }
+  }
+
+  function showBlocked(icon, title, msg) {
+    document.getElementById('blockedIcon').textContent = icon;
+    document.getElementById('blockedTitle').textContent = title;
+    document.getElementById('blockedMsg').textContent = msg;
+    document.getElementById('blockedScreen').style.display = 'flex';
+    document.getElementById('appShell').style.display = 'none';
+  }
+
+  // ── Tabs ────────────────────────────────────────────────────────────────────
+  function renderTabs() {
+    const tabs = document.getElementById('categoryTabs');
+    const hasProducts = allProducts.filter(p => p.active && p.stock > 0).length > 0;
+    const hasMeals = allMeals.length > 0;
+
+    let html = `<button class="cat-tab active" onclick="switchTab(this,'all')">🍽️ All</button>`;
+    allCategories.forEach(c => {
+      const count = allProducts.filter(p => p.active && p.stock > 0 && p.category_id === c.id).length;
+      if (count > 0) html += `<button class="cat-tab" onclick="switchTab(this,'cat_${c.id}')">${c.emoji} ${c.name}</button>`;
+    });
+    if (hasMeals) html += `<button class="cat-tab" onclick="switchTab(this,'meals')">🍽️ Meals</button>`;
+    tabs.innerHTML = html;
+  }
+
+  function switchTab(btn, tab) {
+    document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentTab = tab;
+    renderMenu();
+  }
+
+  // ── Menu Rendering ──────────────────────────────────────────────────────────
+  function renderMenu() {
+    const container = document.getElementById('menuContainer');
+
+    if (currentTab === 'meals') {
+      if (allMeals.length === 0) {
+        container.innerHTML = '<div class="loading"><p>No meals available.</p></div>';
+        return;
+      }
+      container.innerHTML = `
+        <div class="section-label">🍽️ Combo Meals</div>
+        <div class="menu-grid">${allMeals.map(mealCard).join('')}</div>
+      `;
+      return;
+    }
+
+    // Filter products
+    let products = allProducts.filter(p => p.active && p.stock > 0);
+    if (currentTab.startsWith('cat_')) {
+      const catId = parseInt(currentTab.replace('cat_', ''));
+      products = products.filter(p => p.category_id === catId);
+    }
+
+    if (currentTab === 'all') {
+      // Show by category sections + meals at the bottom
+      let html = '';
+      allCategories.forEach(cat => {
+        const catProducts = products.filter(p => p.category_id === cat.id);
+        if (catProducts.length === 0) return;
+        html += `<div class="section-label">${cat.emoji} ${cat.name}</div>`;
+        html += `<div class="menu-grid">${catProducts.map(productCard).join('')}</div>`;
+      });
+      if (allMeals.length > 0) {
+        html += `<div class="section-label">🍽️ Combo Meals</div>`;
+        html += `<div class="menu-grid">${allMeals.map(mealCard).join('')}</div>`;
+      }
+      container.innerHTML = html || '<div class="loading"><p>No items available.</p></div>';
+    } else {
+      if (products.length === 0) {
+        container.innerHTML = '<div class="loading"><p>No items in this category.</p></div>';
+        return;
+      }
+      container.innerHTML = `<div class="menu-grid">${products.map(productCard).join('')}</div>`;
+    }
+  }
+
+  function productCard(p) {
+    const img = p.photo
+      ? `<img src="${p.photo}" alt="${p.name}" class="card-img">`
+      : `<div class="card-img card-emoji">${p.category_emoji || '☕'}</div>`;
+    const desc = p.description ? `<div class="card-desc">${p.description}</div>` : '';
+    return `
+      <div class="menu-card" onclick="addProduct(${p.id})">
+        ${img}
+        <div class="card-body">
+          <div class="card-name">${p.name}</div>
+          ${desc}
+          <div class="card-price">£${parseFloat(p.price).toFixed(2)}</div>
+        </div>
+        <button class="card-add-btn" aria-label="Add ${p.name}">+</button>
+      </div>`;
+  }
+
+  function mealCard(m) {
+    const desc = m.description ? `<div class="card-desc">${m.description}</div>` : '';
+    return `
+      <div class="menu-card meal-card" onclick="addMeal(${m.id})">
+        <div class="card-img card-emoji meal-emoji">🍽️</div>
+        <div class="card-body">
+          <div class="card-name">${m.name}</div>
+          ${desc}
+          <div class="card-price">£${parseFloat(m.price).toFixed(2)}</div>
+          <div class="card-badge">Combo Meal</div>
+        </div>
+        <button class="card-add-btn" aria-label="Add ${m.name}">+</button>
+      </div>`;
+  }
+
+  // ── Cart ─────────────────────────────────────────────────────────────────────
+  function addProduct(id) {
+    const p = allProducts.find(x => x.id === id);
+    if (!p) return;
+    const ex = cart.find(x => x._type === 'product' && x.id === id);
+    if (ex) ex.qty++; else cart.push({ _type: 'product', id: p.id, name: p.name, price: p.price, qty: 1 });
+    updateCartUI();
+    showToast(`${p.name} added`);
+  }
+
+  function addMeal(id) {
+    const m = allMeals.find(x => x.id === id);
+    if (!m) return;
+    const ex = cart.find(x => x._type === 'meal' && x.id === id);
+    if (ex) ex.qty++; else cart.push({ _type: 'meal', id: m.id, name: m.name, price: m.price, qty: 1 });
+    updateCartUI();
+    showToast(`${m.name} added`);
+  }
+
+  function changeQty(idx, delta) {
+    cart[idx].qty += delta;
+    if (cart[idx].qty <= 0) cart.splice(idx, 1);
+    updateCartUI();
+    renderCartBody();
+  }
+
+  function updateCartUI() {
+    const count = cart.reduce((s, i) => s + i.qty, 0);
+    const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+    document.getElementById('cartCount').textContent = count;
+    document.getElementById('cartFabTotal').textContent = '£' + total.toFixed(2);
+    document.getElementById('cartTotal').textContent = '£' + total.toFixed(2);
+    const fab = document.getElementById('cartFab');
+    count > 0 ? fab.classList.remove('hidden') : fab.classList.add('hidden');
+  }
+
+  function renderCartBody() {
+    const el = document.getElementById('cartBody');
+    if (cart.length === 0) {
+      el.innerHTML = '<div class="cart-empty">Your cart is empty</div>';
+      return;
+    }
+    el.innerHTML = cart.map((item, idx) => `
+      <div class="cart-item">
+        <div class="cart-item-info">
+          <div class="cart-item-name">${item.name}${item._type === 'meal' ? ' <span class="meal-tag">Meal</span>' : ''}</div>
+          <div class="cart-item-price">£${(item.price * item.qty).toFixed(2)}</div>
+        </div>
+        <div class="cart-qty">
+          <button class="qty-btn" onclick="changeQty(${idx},-1)">−</button>
+          <span>${item.qty}</span>
+          <button class="qty-btn" onclick="changeQty(${idx},1)">+</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function openCart() {
+    renderCartBody();
+    document.getElementById('cartOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeCart() {
+    document.getElementById('cartOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function closeCartOutside(e) {
+    if (e.target === document.getElementById('cartOverlay')) closeCart();
+  }
+
+  // ── Place Order ───────────────────────────────────────────────────────────────
+  async function placeOrder() {
+    if (cart.length === 0) return;
+    const btn = document.getElementById('placeOrderBtn');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    const items = cart.map(i => ({
+      product_id: i._type === 'product' ? i.id : null,
+      meal_id:    i._type === 'meal'    ? i.id : null,
+      name: i.name,
+      quantity: i.qty,
+      unit_price: i.price
+    }));
+
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table_id: tableId, items, type: 'dine-in', source: 'customer' })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Order failed');
+
+      const hasMeals = cart.some(i => i._type === 'meal');
+      const hasOther = cart.some(i => i._type === 'product');
+      orderPlaced = true;
+      cart = [];
+      updateCartUI();
+      showOrderSuccess(data.id, hasMeals, hasOther);
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Place Order';
+      showToast(err.message, true);
+    }
+  }
+
+  function showOrderSuccess(orderId, hasMeals, hasOther) {
+    let detail = '';
+    if (hasMeals && hasOther) detail = 'Your meals are being prepared in the kitchen. Drinks and other items will be brought to your table shortly.';
+    else if (hasMeals) detail = 'Your meals are being prepared in the kitchen and will be brought to your table.';
+    else detail = 'Your order has been received. It will be brought to your table shortly.';
+
+    document.getElementById('cartBody').innerHTML = `
+      <div class="order-success">
+        <div class="success-icon">✅</div>
+        <h2>Order Sent!</h2>
+        <div class="order-num">Order #${orderId} · ${tableName}</div>
+        <p>${detail}</p>
+      </div>`;
+
+    document.getElementById('cartFoot').innerHTML = `
+      <button class="btn-request-bill" onclick="requestBill()">🧾 Request Bill</button>
+      <button class="btn-place-order" style="margin-top:10px;background:#555;" onclick="closeCart()">Close</button>
+    `;
+  }
+
+  async function requestBill() {
+    try {
+      const res = await fetch(`/api/tables/${tableId}/request-bill`, { method: 'POST' });
+      if (!res.ok) throw new Error('Failed');
+      document.querySelector('.btn-request-bill').textContent = '✅ Bill Requested';
+      document.querySelector('.btn-request-bill').disabled = true;
+      showBlocked('🧾', 'Bill has been requested', 'A staff member will be with you shortly to take payment. Thank you!');
+      closeCart();
+    } catch {
+      showToast('Could not request bill. Please ask a staff member.', true);
+    }
+  }
+
+  // ── Toast ────────────────────────────────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg, error = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'customer-toast show' + (error ? ' toast-error' : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  init();
+  </script>
+</body>
+</html>

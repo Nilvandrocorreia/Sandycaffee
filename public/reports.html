@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports — Sandycaffee</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin.css">
+  <style>
+    .reports-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    @media (max-width: 900px) { .reports-grid { grid-template-columns: 1fr; } }
+    .chart-container { position: relative; height: 260px; }
+  </style>
+</head>
+<body>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main-content">
+    <header class="topbar">
+      <span class="topbar-title">📊 Reports</span>
+      <div class="topbar-right">
+        <div class="user-badge"><div class="user-avatar" id="topbarAvatar">A</div><span id="topbarUserName">Admin</span></div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <h1>📊 Sales Reports</h1>
+        <div style="display:flex;gap:8px;">
+          <a id="exportPdfBtn" href="#" target="_blank" class="btn btn-secondary btn-sm">📄 Export PDF</a>
+        </div>
+      </div>
+
+      <!-- Period Selector -->
+      <div class="filter-tabs" style="margin-bottom:20px;">
+        <button class="filter-tab active" onclick="setPeriod(this,'day')">Today</button>
+        <button class="filter-tab" onclick="setPeriod(this,'week')">Last 7 Days</button>
+        <button class="filter-tab" onclick="setPeriod(this,'month')">Last 30 Days</button>
+      </div>
+
+      <!-- Summary Stats -->
+      <div class="stat-grid" id="statsGrid">
+        <div class="stat-card"><div class="stat-icon">💷</div><div class="stat-label">Total Revenue</div><div class="stat-value" id="statRevenue">£0.00</div></div>
+        <div class="stat-card"><div class="stat-icon">🧾</div><div class="stat-label">Total Orders</div><div class="stat-value" id="statOrders">0</div></div>
+        <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-label">Avg Order Value</div><div class="stat-value" id="statAvg">£0.00</div></div>
+      </div>
+
+      <div class="reports-grid">
+        <!-- Sales Chart -->
+        <div class="card">
+          <h3 style="margin-bottom:16px;font-size:0.95rem;color:rgba(255,255,255,0.7);">📈 Daily Revenue</h3>
+          <div class="chart-container">
+            <canvas id="salesChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Best Selling Chart -->
+        <div class="card">
+          <h3 style="margin-bottom:16px;font-size:0.95rem;color:rgba(255,255,255,0.7);">⭐ Best Selling Products</h3>
+          <div class="chart-container">
+            <canvas id="bestSellingChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Best Sellers Table -->
+      <div class="card" style="margin-bottom:20px;">
+        <h3 style="margin-bottom:14px;font-size:0.95rem;color:rgba(255,255,255,0.7);">🏆 Top Products</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Product</th><th>Qty Sold</th><th>Revenue</th></tr></thead>
+            <tbody id="bestTableBody">
+              <tr><td colspan="4" style="text-align:center;"><div class="spinner"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Stock Report -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <h3 style="font-size:0.95rem;color:rgba(255,255,255,0.7);">📦 Stock Report</h3>
+          <a href="/api/inventory/report/pdf" target="_blank" class="btn btn-secondary btn-sm">📄 Export Stock PDF</a>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Min Stock</th><th>Status</th></tr></thead>
+            <tbody id="stockTableBody">
+              <tr><td colspan="6" style="text-align:center;"><div class="spinner"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/reports.js"></script>
+</body>
+</html>

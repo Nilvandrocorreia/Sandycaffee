@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Sandycaffee</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main-content">
+    <header class="topbar">
+      <span class="topbar-title">Dashboard</span>
+      <div class="topbar-right">
+        <div class="user-badge">
+          <div class="user-avatar" id="topbarAvatar">A</div>
+          <span id="topbarUserName">Admin</span>
+        </div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="stat-grid" id="statGrid">
+        <div class="stat-card"><div class="stat-icon">💷</div><div class="stat-label">Today's Revenue</div><div class="stat-value" id="statRevenue">£0.00</div><div class="stat-sub" id="statOrders">0 orders</div></div>
+        <div class="stat-card"><div class="stat-icon">🧾</div><div class="stat-label">Orders Today</div><div class="stat-value" id="statOrderCount">0</div><div class="stat-sub">All types</div></div>
+        <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-label">Best Seller</div><div class="stat-value" id="statBestSeller" style="font-size:1.1rem">—</div><div class="stat-sub" id="statBestQty"></div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;" id="mainGrid">
+        <div class="card">
+          <h3 style="margin-bottom:16px;font-size:0.95rem;color:rgba(255,255,255,0.7);">📈 Hourly Sales Today</h3>
+          <div class="chart-container">
+            <canvas id="hourlyChart"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <h3 style="margin-bottom:16px;font-size:0.95rem;color:rgba(255,255,255,0.7);">⚠️ Low Stock Alerts</h3>
+          <div id="lowStockList">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:24px;">
+        <h3 style="margin-bottom:16px;font-size:0.95rem;color:rgba(255,255,255,0.7);">🪑 Table Status</h3>
+        <div id="tableStatusGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;">
+          <div class="spinner"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-bottom:16px;font-size:0.95rem;color:rgba(255,255,255,0.7);">⚡ Quick Actions</h3>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <a href="/pos.html" class="btn btn-primary">💰 Open POS</a>
+          <a href="/kitchen.html" class="btn btn-secondary">👨‍🍳 Kitchen View</a>
+          <a href="/inventory.html" class="btn btn-secondary">📦 Inventory</a>
+          <a href="/reports.html" class="btn btn-secondary">📊 Reports</a>
+          <a href="/tables.html" class="btn btn-secondary">🪑 Tables</a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

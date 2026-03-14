@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Users — Sandycaffee</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main-content">
+    <header class="topbar">
+      <span class="topbar-title">User Management</span>
+      <div class="topbar-right">
+        <div class="user-badge"><div class="user-avatar" id="topbarAvatar">A</div><span id="topbarUserName">Admin</span></div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <h1>👥 Users</h1>
+        <button class="btn btn-primary" onclick="openModal()">+ Add User</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+            <tbody id="userTableBody"><tr><td colspan="6" style="text-align:center;padding:30px;"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">Add User</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="modalAlert" class="alert" style="display:none"></div>
+        <form id="userForm">
+          <div class="two-col">
+            <div class="form-group"><label>Full Name *</label><input class="form-control" id="fName" required></div>
+            <div class="form-group"><label>Email *</label><input type="email" class="form-control" id="fEmail" required></div>
+          </div>
+          <div class="form-group"><label>Role *</label>
+            <select class="form-control" id="fRole">
+              <option value="cashier">Cashier</option>
+              <option value="kitchen">Kitchen</option>
+              <option value="administrator">Administrator</option>
+            </select>
+          </div>
+          <div class="form-group"><label id="passwordLabel">Password *</label><input type="password" class="form-control" id="fPassword" placeholder="Leave blank to keep current"></div>
+          <div class="form-group" id="activeGroup" style="display:none">
+            <div class="form-check"><input type="checkbox" id="fActive" checked><label for="fActive">Active</label></div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveUser()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/users.js"></script>
+</body>
+</html>

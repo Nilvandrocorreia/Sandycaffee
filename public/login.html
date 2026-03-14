@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Sandycaffee</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --primary: #D2691E; --secondary: #8B4513; --bg-dark: #1a1a2e; --card-bg: #0f3460; --accent: #FF8C00; --border: rgba(255,255,255,0.08); --text: #e0e0e0; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; background: var(--bg-dark); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at 30% 30%, rgba(210,105,30,0.12) 0%, transparent 60%), radial-gradient(ellipse at 70% 70%, rgba(255,140,0,0.08) 0%, transparent 60%); pointer-events: none; }
+    .login-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 44px 40px; width: 100%; max-width: 420px; position: relative; z-index: 1; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+    .logo { text-align: center; margin-bottom: 32px; }
+    .logo h1 { font-size: 2rem; color: var(--accent); font-weight: 700; }
+    .logo p { color: rgba(255,255,255,0.4); font-size: 0.85rem; margin-top: 4px; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-size: 0.83rem; font-weight: 500; margin-bottom: 7px; color: rgba(255,255,255,0.65); }
+    .form-control { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; color: var(--text); font-family: 'Poppins', sans-serif; font-size: 0.92rem; outline: none; transition: border-color 0.2s; }
+    .form-control:focus { border-color: var(--primary); background: rgba(255,255,255,0.09); }
+    .form-control::placeholder { color: rgba(255,255,255,0.25); }
+    .btn-login { width: 100%; background: var(--primary); color: #fff; border: none; border-radius: 10px; padding: 13px; font-family: 'Poppins', sans-serif; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 8px; }
+    .btn-login:hover { background: var(--secondary); }
+    .btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
+    .alert { padding: 11px 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 16px; background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.3); color: #fc8181; display: none; }
+    .alert.show { display: block; }
+    .divider { text-align: center; color: rgba(255,255,255,0.25); font-size: 0.78rem; margin: 20px 0 14px; }
+    .demo-creds { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .demo-creds p { font-size: 0.78rem; color: rgba(255,255,255,0.4); margin-bottom: 6px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    .cred { display: flex; justify-content: space-between; font-size: 0.82rem; color: rgba(255,255,255,0.55); padding: 3px 0; }
+    .cred span:last-child { color: rgba(255,140,0,0.7); }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <div class="logo">
+      <h1>☕ Sandycaffee</h1>
+      <p>Point of Sale System</p>
+    </div>
+    <div id="alert" class="alert"></div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="username">Username or Email</label>
+        <input type="text" id="username" class="form-control" placeholder="admin" autocomplete="username" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" class="form-control" placeholder="••••••••" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn-login" id="loginBtn">Sign In</button>
+    </form>
+    <div class="divider">Default credentials</div>
+    <div class="demo-creds">
+      <p>Demo Accounts</p>
+      <div class="cred"><span>Admin</span><span>admin / admin123</span></div>
+      <div class="cred"><span>Cashier</span><span>Sarah / cashier123</span></div>
+      <div class="cred"><span>Kitchen</span><span>Chef Tom / kitchen123</span></div>
+    </div>
+  </div>
+  <script src="/js/auth.js"></script>
+</body>
+</html>

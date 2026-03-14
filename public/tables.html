@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tables — Sandycaffee</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main-content">
+    <header class="topbar">
+      <span class="topbar-title">Tables & QR Codes</span>
+      <div class="topbar-right">
+        <div class="user-badge"><div class="user-avatar" id="topbarAvatar">A</div><span id="topbarUserName">Admin</span></div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <h1>🪑 Tables & QR Codes</h1>
+        <button class="btn btn-primary" onclick="openModal()">+ Add Table</button>
+      </div>
+
+      <!-- BASE URL config panel -->
+      <div class="card" style="margin-bottom:24px;padding:20px;">
+        <h3 style="margin:0 0 4px;font-size:1rem;">📱 Mobile QR Code URL</h3>
+        <p style="margin:0 0 14px;font-size:0.82rem;color:rgba(255,255,255,0.45);">
+          Set the address customers use to scan QR codes from their phones. Must be your local network IP, not localhost.
+        </p>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <input class="form-control" id="baseUrlInput" placeholder="http://192.168.1.100:3000" style="flex:1;min-width:240px;">
+          <button class="btn btn-secondary btn-sm" onclick="useDetected()" id="detectedBtn">📡 Use detected IP</button>
+          <button class="btn btn-primary btn-sm" onclick="saveBaseUrl()">💾 Save & Regenerate QR</button>
+        </div>
+        <div id="baseUrlStatus" style="margin-top:10px;font-size:0.8rem;color:rgba(255,255,255,0.4);"></div>
+      </div>
+
+      <div id="tablesGrid" class="tables-grid">
+        <div class="spinner"></div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Add Table</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="modalAlert" class="alert" style="display:none"></div>
+        <div class="two-col">
+          <div class="form-group"><label>Table Number *</label><input type="number" class="form-control" id="fNumber" min="1" required></div>
+          <div class="form-group"><label>Table Name *</label><input class="form-control" id="fName" placeholder="e.g. Table 4" required></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveTable()">Add Table</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Print QR Modal -->
+  <div class="modal-overlay" id="printModalOverlay">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-header">
+        <h3 id="printModalTitle">QR Code</h3>
+        <button class="modal-close" onclick="closePrintModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align:center">
+        <div id="printQRContent">
+          <h2 style="color:var(--accent);margin-bottom:12px;">☕ Sandycaffee</h2>
+          <img id="printQRImg" style="width:200px;height:200px;background:#fff;border-radius:8px;padding:6px;" alt="QR Code">
+          <p id="printTableName" style="margin-top:12px;font-size:1rem;font-weight:600;"></p>
+          <p style="font-size:0.78rem;color:rgba(255,255,255,0.4);margin-top:4px;">Scan to order</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closePrintModal()">Close</button>
+        <button class="btn btn-primary" onclick="printQR()">🖨️ Print</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/tables.js"></script>
+</body>
+</html>
