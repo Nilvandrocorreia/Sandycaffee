@@ -56,11 +56,24 @@ const { detectLocalIP } = require('./routes/settings');
 async function start() {
   await initDb();
   await seed();
+
+  // If BASE_URL env var is set (e.g. on Railway), persist it to the DB automatically
+  if (process.env.BASE_URL) {
+    const db = require('./database/db').getDb();
+    const envUrl = process.env.BASE_URL.trim().replace(/\/$/, '');
+    await db.run("INSERT OR REPLACE INTO settings (key, value) VALUES ('base_url', ?)", [envUrl]);
+    console.log(`[SETTINGS] BASE_URL locked from environment: ${envUrl}`);
+  }
+
   app.listen(PORT, '0.0.0.0', () => {
     const localIP = detectLocalIP();
     console.log(`☕ Sandycaffee POS running on http://localhost:${PORT}`);
-    console.log(`📱 Mobile / LAN access:   http://${localIP}:${PORT}`);
-    console.log(`🔗 Customer QR base URL:  http://${localIP}:${PORT}  (set in Tables & QR page)`);
+    if (process.env.BASE_URL) {
+      console.log(`🌐 Production BASE_URL (env): ${process.env.BASE_URL}`);
+    } else {
+      console.log(`📱 Mobile / LAN access:   http://${localIP}:${PORT}`);
+      console.log(`🔗 Customer QR base URL:  http://${localIP}:${PORT}  (set in Tables & QR page)`);
+    }
   });
 }
 

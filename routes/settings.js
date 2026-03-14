@@ -23,15 +23,23 @@ router.get('/base-url', async (req, res) => {
   const detectedIp = detectLocalIP();
   const port = process.env.PORT || 3000;
   const detectedUrl = `http://${detectedIp}:${port}`;
+  const envUrl = process.env.BASE_URL ? process.env.BASE_URL.trim().replace(/\/$/, '') : null;
+  const activeUrl = envUrl || (setting ? setting.value : detectedUrl);
   res.json({
-    base_url: setting ? setting.value : detectedUrl,
+    base_url: activeUrl,
     detected_url: detectedUrl,
-    is_custom: !!setting
+    env_url: envUrl,
+    is_custom: !!setting,
+    is_env_locked: !!envUrl
   });
 });
 
 // PUT /api/settings/base-url
 router.put('/base-url', requireAdmin, async (req, res) => {
+  // If BASE_URL is forced via environment, block manual changes
+  if (process.env.BASE_URL) {
+    return res.status(403).json({ error: 'BASE_URL is set via environment variable and cannot be changed here. Update it in your Railway environment settings.' });
+  }
   let { base_url } = req.body;
   if (!base_url) return res.status(400).json({ error: 'base_url is required' });
   base_url = base_url.trim().replace(/\/$/, '');

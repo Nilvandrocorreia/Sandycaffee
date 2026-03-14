@@ -9,13 +9,26 @@ async function loadBaseUrl() {
     const data = await api('GET', '/api/settings/base-url');
     detectedUrl = data.detected_url;
     document.getElementById('baseUrlInput').value = data.base_url;
-    document.getElementById('detectedBtn').title = `Detected: ${data.detected_url}`;
     const statusEl = document.getElementById('baseUrlStatus');
-    statusEl.innerHTML = `
-      Current: <strong style="color:var(--accent)">${data.base_url}</strong>
-      &nbsp;|&nbsp; Detected LAN IP: <strong>${data.detected_url}</strong>
-      ${data.is_custom ? '' : '&nbsp;<span style="color:#d69e2e;">(auto-detected — save to lock in)</span>'}
-    `;
+    const detectedBtn = document.getElementById('detectedBtn');
+
+    if (data.is_env_locked) {
+      // Locked by Railway environment variable — disable editing
+      document.getElementById('baseUrlInput').disabled = true;
+      document.getElementById('saveBaseUrlBtn').disabled = true;
+      detectedBtn.style.display = 'none';
+      statusEl.innerHTML = `
+        <span style="color:#68d391;">✅ Locked from environment variable <code>BASE_URL</code>: <strong style="color:var(--accent)">${data.env_url}</strong></span>
+        &nbsp;— To change, update the <code>BASE_URL</code> variable in Railway.
+      `;
+    } else {
+      detectedBtn.title = `Detected: ${data.detected_url}`;
+      statusEl.innerHTML = `
+        Current: <strong style="color:var(--accent)">${data.base_url}</strong>
+        &nbsp;|&nbsp; Detected LAN IP: <strong>${data.detected_url}</strong>
+        ${data.is_custom ? '' : '&nbsp;<span style="color:#d69e2e;">(auto-detected — save to lock in)</span>'}
+      `;
+    }
   } catch (err) {
     console.error('Failed to load base URL:', err.message);
   }

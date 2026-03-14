@@ -27,12 +27,12 @@
       <div class="card" style="margin-bottom:24px;padding:20px;">
         <h3 style="margin:0 0 4px;font-size:1rem;">📱 Mobile QR Code URL</h3>
         <p style="margin:0 0 14px;font-size:0.82rem;color:rgba(255,255,255,0.45);">
-          Set the address customers use to scan QR codes from their phones. Must be your local network IP, not localhost.
+          The base URL used in customer QR codes. On Railway this is set automatically via the <code>BASE_URL</code> environment variable.
         </p>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
           <input class="form-control" id="baseUrlInput" placeholder="http://192.168.1.100:3000" style="flex:1;min-width:240px;">
           <button class="btn btn-secondary btn-sm" onclick="useDetected()" id="detectedBtn">📡 Use detected IP</button>
-          <button class="btn btn-primary btn-sm" onclick="saveBaseUrl()">💾 Save & Regenerate QR</button>
+          <button class="btn btn-primary btn-sm" id="saveBaseUrlBtn" onclick="saveBaseUrl()">💾 Save & Regenerate QR</button>
         </div>
         <div id="baseUrlStatus" style="margin-top:10px;font-size:0.8rem;color:rgba(255,255,255,0.4);"></div>
       </div>
