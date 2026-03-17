@@ -53,8 +53,29 @@ const { initDb } = require('./database/db');
 const seed = require('./database/seed');
 const { detectLocalIP } = require('./routes/settings');
 
+async function resetTransactionalData(db) {
+  console.log('[RESET] RESET_DB=true detected — clearing transactional data...');
+  await db.exec('PRAGMA foreign_keys = OFF');
+  await db.exec(`
+    DELETE FROM order_items;
+    DELETE FROM sales;
+    DELETE FROM orders;
+    DELETE FROM stock_movements;
+    DELETE FROM sqlite_sequence WHERE name IN ('orders', 'order_items', 'sales', 'stock_movements');
+  `);
+  await db.run("UPDATE tables SET status = 'available'");
+  await db.exec('PRAGMA foreign_keys = ON');
+  console.log('[RESET] Transactional data cleared. Orders, sales and stock movements reset to zero.');
+}
+
 async function start() {
   await initDb();
+
+  if (process.env.RESET_DB === 'true') {
+    const db = require('./database/db').getDb();
+    await resetTransactionalData(db);
+  }
+
   await seed();
 
   // If BASE_URL env var is set (e.g. on Railway), persist it to the DB automatically
